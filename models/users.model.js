@@ -38,6 +38,5 @@ module.exports = { User };
 notes while creating userModel
  - username and email should be unique and to have regular expression
  - encrypt password before storing (never store plain password)
-
 */
  

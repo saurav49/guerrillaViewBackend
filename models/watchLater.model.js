@@ -3,11 +3,15 @@ const { Schema } = mongoose;
 
 const watchLaterSchema = new Schema({
 
-  _id : {
-    type: Schema.Types.ObjectId, ref: 'Video',
-  }
+  userId: {
+    type: Schema.Types.ObjectId, ref: 'User',
+  },
 
-});
+  videos: [ { _id: {
+    type: Schema.Types.ObjectId, ref: 'Video',
+  } } ]
+
+}, { versionKey: false });
 
 const WatchLater = mongoose.model('WatchLater', watchLaterSchema);
 

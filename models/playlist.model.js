@@ -3,13 +3,18 @@ const { Schema } = mongoose;
 
 const playlistSchema = new Schema({
 
-  name : {
+  userId: {
+    type: Schema.Types.ObjectId, ref: 'User',
+    required: 'User Id is required',
+  },
+
+  name: {
     type: String,
     required: 'Playlist name is Required',
     unique: true,
   },
 
-  videoList: [ {_id: { type: Schema.Types.ObjectId, ref: 'Video' } } ],
+  videoList: [ { type: Schema.Types.ObjectId, ref: 'Video' } ],
 
 }, { versionKey: false });
 

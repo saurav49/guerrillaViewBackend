@@ -3,9 +3,13 @@ const { Schema } = mongoose;
 
 const historySchema = new Schema({
 
-  _id: {
+  userId: {
+    type: Schema.Types.ObjectId, ref: 'User',
+  },
+
+  videos: [ { _id: {
     type: Schema.Types.ObjectId, ref: 'Video',
-  }
+  } } ]
 
 }, { versionKey: false });
 

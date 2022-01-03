@@ -1,5 +1,13 @@
 {
   "files": {
+    "routes/playlist.router.js": [
+      {
+        "id": "d970c106-254f-450f-bbf8-4678e82b227f",
+        "line": 25,
+        "version": 1420,
+        "index": 713
+      }
+    ],
     "test.env": [
       {
         "id": "2fc0ad3c-e968-469f-947e-fa6fa75bf193",

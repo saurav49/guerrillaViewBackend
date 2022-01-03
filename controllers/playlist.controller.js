@@ -1,105 +1,166 @@
 const { Playlist } = require('../models/playlist.model');
-const _ = require('lodash');
 
-const getAllPlaylist = async (req, res, next) => {
+const createNewPlaylist = async (res, userId, name, videoId) => {
 
-  const allPlaylist = await Playlist.find({});
+  try {
+    const playlist = new Playlist({ userId, name });
+    const savePlaylist = await playlist.save();
+
+
+    if(!videoId) {
+      return res.json({
+        success: true,
+        playlists: savePlaylist,
+      })
+    }
+
+    savePlaylist.videoList.push(videoId);
+    await savePlaylist.save();
+
+    return res.json({
+      success: false,
+      playlists: savePlaylist,
+    })
+
+  } catch(error) {
+    return res.json({
+      success: false,
+      message: error.message,
+    })
+  }
+}
+
+const getAllPlaylist = async (res, id) => {
+  const allPlaylist = await Playlist.find({ userId: id });
+
+  if(allPlaylist.length === 0) {
+    return res.json({
+      success: false,
+      message: "Playlist not present for the particular user",
+    })
+  }
 
   res.json({
     success: true,
-    allPlaylist,
+    allPlaylist: allPlaylist,
   });
 
 }
 
-const addNewPlaylist = async (req, res) => {
+const addVideoToPlaylist = async (res, playlistId, video) => {
+  let playlist = await Playlist.findOne({ _id: playlistId });
 
-  const playlist  = req.body.playlist;
 
-  console.log({ playlist });
+  if(!playlist) {
+    return res.json({
+      success: false,
+      message: 'Playlist not found',
+    })
+  }
 
-  const newPlaylist = new Playlist(playlist);
-  const saveNewPlaylist = await newPlaylist.save();
-
-  console.log({ saveNewPlaylist });
-
-  res.json({
-    success: true,
-    saveNewPlaylist,
-  });
-
-}
-
-const addVideoToPlaylist = async (req, res) => {
-
-  const { playlistId } = req.params;
-  const video  = req.body.video;
-  let foundPlaylist = await Playlist.findOne({ _id: playlistId });
-
-  foundPlaylist.videoList.push(video);
+  playlist.videoList.push(video);
+  playlist = await playlist.save();
   
-  const videoAdded = new Playlist(foundPlaylist);
-  const savePlaylist = await videoAdded.save();
-
-  console.log({ savePlaylist });
-
-
-  res.json({
+  return res.json({
     success: true,
-    savePlaylist,
+    playlist,
+    playlistId,
+    videoId: video, 
   })
-
+  
 }
 
-const getAllVideosFromPlaylist = async (req, res) => {
+const getAllVideosFromPlaylist = async (res, playlistId) => {
+  const playlist = await Playlist.findOne({ _id: playlistId });
 
-  const { playlistId } = req.params;
-  const foundPlaylist = await Playlist.findOne({ _id: playlistId }).populate({path:"videoList", populate: { path: "_id", model: "Video" }});
+  if(!playlist) {
+    return res.json({
+      success: false,
+      message: 'Playlist not found',
+    })
+  }
 
-  res.json({
+  const playlistVids = await Playlist.findOne({ _id: playlistId }).populate('videoList');
+
+  return res.json({
     success: true,
-    videoList: foundPlaylist.videoList,
+    allPlaylistVids: playlistVids.videoList,
+    allPlaylistWithVids,
   })
-
 }
 
-const deletePlaylist = async (req, res) => {
+const deletePlaylist = async (res, playlistId) => {
+  
+  const playlist = await Playlist.findOne({ _id: playlistId });
 
-  const { playlistId } = req.params;
-  const deletedPlaylist = await Playlist.findOneAndDelete({ _id: playlistId });
+  if(!playlist) {
+    return res.json({
+      success: false,
+      message: 'Playlist not found',
+    })
+  }
 
-  res.json({
+  await Playlist.findByIdAndDelete(playlistId);
+  
+  return res.json({
     success: true,
-    deletedPlaylist,
+    deletedPlaylistId: playlistId,
   })
+  
 }
 
 const deleteVideoFromPlaylist = async (req, res) => {
 
   const { playlistId, videoId } = req.params;
-  let foundPlaylist = await Playlist.findOne({ _id: playlistId });
+  
+  const playlist = await Playlist.findOne({ _id: playlistId });
 
-  foundPlaylist.videoList.pull(videoId)
+  if(!playlist) {
+    return res.json({
+      success: false,
+      message: 'Playlist not found',
+    })
+  }
 
-  const savePlaylist = await foundPlaylist.save();
-
-  console.log({ savePlaylist });
+  playlist.videoList.pull(videoId);
+  const savePlaylist = await playlist.save();
 
   res.json({
     success: true,
     savePlaylist,
+    playlistId,
+    videoId,
   });
 
 }
 
-const getAllVids = async (req, res) => {
-  const allPlaylistVids = await Playlist.find({}).populate({ path: "videoList", populate: { path: "_id", model: "Video" }});
+const populateVidsFromPlaylistForUser = async (res, id) => {
+  try {
 
+    const foundUser = await Playlist.findOne({ userId: id });
 
-  res.json({
-    success: true,
-    allPlaylistVids
-  })
+    if(!foundUser) {
+      return res.json({
+        success: false,
+        message: 'No Playlist Present of that particular User',
+      })
+    }
+
+    const allPlaylistWithVids = await Playlist.find({ userId: id }).populate('videoList');
+
+    return res.json({
+      success: false,
+      populatePlaylistVids: allPlaylistWithVids,
+    })
+
+  } catch(error) {
+    return res.json({
+      success: false,
+      message: error.message,
+    })
+  }
+  
 }
 
-module.exports = { getAllPlaylist, addNewPlaylist, addVideoToPlaylist, getAllVideosFromPlaylist, deletePlaylist, deleteVideoFromPlaylist, getAllVids };
+
+module.exports = { getAllPlaylist, addVideoToPlaylist, getAllVideosFromPlaylist, deletePlaylist, deleteVideoFromPlaylist, createNewPlaylist, populateVidsFromPlaylistForUser };

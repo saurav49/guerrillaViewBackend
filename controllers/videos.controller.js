@@ -25,12 +25,12 @@ const addNewVideo = async (req, res) => {
 
 const addNewNote = async (req, res) => {
 
-  const { videoId,  } = req.params;
+  const { videoId  } = req.params;
   const text  = req.body;
 
-  console.log(text);
+  let reqVideo = await Video.findOne({ id: videoId });
 
-  let reqVideo = await Video.findById(videoId);
+  console.log({ text }, { videoId }, { reqVideo });
 
   reqVideo.notes.push(text);
 

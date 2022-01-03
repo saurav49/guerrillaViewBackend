@@ -2,6 +2,7 @@ const tryCatchWrapper = async (res, callback, statusCode = 500) => {
   try {
     await callback();
   } catch(error) {
+    console.log({ error });
     res.status(statusCode).json({
       success: true,
       message: error.message,

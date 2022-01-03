@@ -2,6 +2,30 @@ const { User } = require('../models/users.model');
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 
+require('dotenv').config({ path: "../test.env"});
+
+
+const generateAndGetToken = (res, user) => {
+
+  const privateKey = process.env.SECRET_KEY
+
+  jwt.sign({ userId: user.username }, privateKey, { expiresIn: '24h'},
+  function(err, token) {
+    if(err) {
+      sendError(res, err.message);
+    }
+    else {
+      res.json({
+        success: true,
+        token,
+        user,
+      })
+    } 
+  })
+
+}
+
+
 const signUpUser = async (req, res) => {
 
   const user = req.body.user;
@@ -15,50 +39,71 @@ const signUpUser = async (req, res) => {
 
   const savedUser = await newUser.save();
 
-  res.json({
-    success: true,
-    savedUser,
-  })
+  return generateAndGetToken(res, savedUser)
 
 }
 
 
 const loginUser = async (req, res) => {
 
-  const secret = 'D8oU0W0+7AsE1q7E39/cVoqtIZnKUDUAi+ylG+y0FVF20h1xz3nlDISL5fj0MUf6kAKjUjDMM2LuKtONokkNZ4Z5mzLomxYS+lCNmM6ul3K+1J7w/0SDCQMq+m4ddsDdcEG5Fcx7ImKZDoHJ7fWfW1zHG6y0p3lpwV2JraTYkCai6+7KV8+bAAWhZs7xLEij5qHLjo34JQAhMkXjOA4aFTnSzxLqpUxF2yhbT/LVhFSe06BA2echAufkb7DEAyHv+2BNa/Botod97EFzCt0rmFi84NYUHZpTZXb1xfmgfZI1oGnZ1Ox4glw7HarKvQiQh6ZFGmv9Gu2q+JM2lhrNLA==';
-
   const { email, password } = req.body.user;
 
   const user = await User.findOne({ email });
 
-  if(user) {
-    
-    const validPassword = await bcrypt.compare(password, user.password);
-
-    if(validPassword) {
-      const token = jwt.sign({ userId: user.username }, secret, {
-        expiresIn: '24h'
-      });
-
-       res.json({
-        success: true,
-        token,
-        username: user.username,
-      })
-
-    } else {
-      res.status(400).json({
-        success: false,
-        message: 'incorrect password, please try again',
-      })
-    }
-
-  } else {
-    res.status(401).json({
+  if(!user) {
+    return res.status(404).json({
       success: false,
-      message: 'user not found',
+      message: "user doesn't already exits"
     })
   }
+
+  const isValidPassword = await bcrypt.compare(password, user.password);
+
+  if(!isValidPassword) {
+      return res.status(403).json({
+        success: false,
+        message: "Incorrect password! Please try again"
+      })
+  }
+
+  return generateAndGetToken(res, user);
+
+  // if(user) {
+    
+  //   const validPassword = await bcrypt.compare(password, user.password);
+
+  //   if(!validPassword) {
+      //   return res.status(403).json({
+      //   success: false,
+      //   message: "Incorrect password! Please try again"
+      // })
+  //   }
+
+
+  //   // if(validPassword) {
+  //   //   const token = jwt.sign({ userId: user.username }, secret, {
+  //   //     expiresIn: '24h'
+  //   //   });
+
+  //   //    res.json({
+  //   //     success: true,
+  //   //     token,
+  //   //     username: user.username,
+  //   //   })
+
+  //   // } else {
+  //   //   res.status(400).json({
+  //   //     success: false,
+  //   //     message: 'incorrect password, please try again',
+  //   //   })
+  //   // }
+
+  // } else {
+  //   res.status(401).json({
+  //     success: false,
+  //     message: 'user not found',
+  //   })
+  // }
 }
 
 module.exports = { signUpUser, loginUser };
